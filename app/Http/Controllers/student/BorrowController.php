@@ -12,11 +12,14 @@ use Carbon\Carbon;
 
 class BorrowController extends Controller
 {
+    /**
+     * Show borrow page: available laptops + student's own requests.
+     */
     public function index()
     {
-        $userId  = Auth::id();
+        $userId = Auth::id();
 
-        // Ensure student profile exists
+        // Ensure student profile exists (linked by user_id)
         $student = Student::where('user_id', $userId)->first();
         if (!$student) {
             $student = Student::create([
@@ -32,12 +35,12 @@ class BorrowController extends Controller
             ]);
         }
 
-        // Only available laptops for selection
+        // Only laptops that are available
         $availableLaptops = Laptop::where('status', 'available')
             ->orderBy('device_name')
             ->get();
 
-        // Student’s own requests
+        // Student’s own requests (most recent first)
         $borrowings = Borrowing::with(['laptop'])
             ->where('student_id', $student->id)
             ->orderByDesc('requested_at')
@@ -46,35 +49,50 @@ class BorrowController extends Controller
         return view('student.borrow', compact('student', 'availableLaptops', 'borrowings'));
     }
 
+    /**
+     * Store a borrow request (accepts any hours + minutes; min total 1 minute).
+     */
     public function store(Request $request)
     {
         $student = Student::where('user_id', Auth::id())->firstOrFail();
 
         $validated = $request->validate([
-            'laptop_id'      => ['required', 'exists:laptops,id'],
-            'duration_hours' => ['required', 'integer', 'min:1', 'max:12'],
-            'purpose'        => ['nullable', 'string', 'max:255'],
+            'laptop_id'  => ['required', 'exists:laptops,id'],
+            'duration_h' => ['required', 'integer', 'min:0'],        // no upper limit
+            'duration_m' => ['required', 'integer', 'min:0', 'max:59'], // minutes field
+            'purpose'    => ['nullable', 'string', 'max:255'],
         ]);
 
-        $hours  = (int) $request->input('duration_hours', 1);
+        $hours        = (int) $validated['duration_h'];
+        $minutes      = (int) $validated['duration_m'];
+        $totalMinutes = ($hours * 60) + $minutes;
 
+        // Minimum: 1 minute
+        if ($totalMinutes < 1) {
+            return back()
+                ->withErrors(['duration_h' => 'Duration must be at least 1 minute.'])
+                ->withInput();
+        }
+
+        // Ensure the selected laptop is still available
         $laptop = Laptop::where('id', $validated['laptop_id'])
-                        ->where('status', 'available')
-                        ->firstOrFail();
+            ->where('status', 'available')
+            ->firstOrFail();
 
         $now = Carbon::now();
-        $due = (clone $now)->addHours($hours);
+        $due = (clone $now)->addMinutes($totalMinutes);
 
         Borrowing::create([
             'student_id'     => $student->id,
             'laptop_id'      => $laptop->id,
-            'ip_asset_id'    => null, // student flow doesn't assign IP
-            'status'         => 'pending',
+            'ip_asset_id'    => null,             // Student flow doesn't assign IP
+            'status'         => 'pending',        // Timer only starts when admin approves
             'purpose'        => $validated['purpose'] ?? null,
-            'duration_hours' => $hours,          // ← SAVE IT
+            'duration_hours' => $hours,           // keep hours part in existing column
             'requested_at'   => $now,
             'due_at'         => $due,
 
+            // Snapshots
             'student_snapshot_json' => [
                 'id'        => $student->id,
                 'full_name' => $student->full_name,

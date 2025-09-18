@@ -5,20 +5,25 @@
 <style>
   :root{
     --card-bg:#ffffff;
-    --card-border: #e9eef5;
-    --soft:#f1f5fb;
-    --ink:#12161f;
+    --card-border:#e9eef5;
+    --soft:#f6f8fc;
+    --ink:#111114;
     --muted:#6b7280;
-    --brand:#2563eb;
-    --brand-soft:#e8f0ff;
+    --brand:#0A84FF;
+    --brand-soft:rgba(10,132,255,.14);
   }
+  @media (prefers-color-scheme:dark){
+    :root{ --card-bg:#151517; --card-border:#2C2C2E; --soft:#111114; --ink:#ECECEC; --muted:#9b9ba1; }
+  }
+
   .section-card{
     background:var(--card-bg);
     border:1px solid var(--card-border);
     border-radius:16px;
     padding:1.25rem;
-    box-shadow:0 6px 18px rgba(18,22,31,0.06);
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
   }
+
   .laptop-grid{
     display:grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -28,52 +33,42 @@
     border:1px solid var(--card-border);
     border-radius:14px;
     overflow:hidden;
-    background:#fff;
+    background:var(--card-bg);
     transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
     cursor:pointer;
     position:relative;
   }
-  .laptop-card:hover{
-    transform: translateY(-2px);
-    box-shadow:0 10px 24px rgba(18,22,31,0.08);
-  }
-  .laptop-card input[type="radio"]{
-    position:absolute; inset:0; opacity:0; cursor:pointer;
-  }
-  .laptop-thumb{
-    width:100%; aspect-ratio: 16/10; object-fit:cover; background:#f2f4f8;
-  }
-  .laptop-body{
-    padding:.8rem .9rem 1rem .9rem;
-  }
-  .laptop-name{
-    font-weight:700; color:var(--ink); font-size:1rem; line-height:1.2;
-  }
-  .laptop-meta{
-    font-size:.9rem; color:var(--muted);
-  }
-  .laptop-card.active{
-    border-color: var(--brand);
-    box-shadow: 0 0 0 3px var(--brand-soft);
-  }
+  .laptop-card:hover{ transform: translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.10); }
+  .laptop-card input[type="radio"]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .laptop-thumb{ width:100%; aspect-ratio: 16/10; object-fit:cover; background:#f2f4f8; }
+  .laptop-body{ padding:.8rem .9rem 1rem .9rem; }
+  .laptop-name{ font-weight:800; color:var(--ink); font-size:1rem; line-height:1.2; }
+  .laptop-meta{ font-size:.9rem; color:var(--muted); }
+  .laptop-card.active{ border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 
-  .slider-wrap{
-    display:flex; align-items:center; gap:14px;
+  .duration-wrap{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:12px;
   }
-  .slider-wrap .value-badge{
-    min-width:56px; text-align:center; background:var(--brand);
-    color:#fff; font-weight:700; border-radius:999px; padding:.35rem .6rem;
+  .pill-input{
+    border-radius:12px; border:1px solid var(--card-border); background:var(--soft);
+    padding:10px 12px; font-weight:700; color:var(--ink);
   }
+  .hint{ color:var(--muted); }
+
+  .preview{
+    border:1px dashed var(--card-border);
+    border-radius:12px; padding:10px 12px; background:transparent; color:var(--ink);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .preview .label{ font-weight:800; }
+  .preview .value{ font-variant-numeric: tabular-nums; font-weight:800; }
 
   .status-badge { text-transform: capitalize; }
-  .req-grid{
-    display:grid; gap:16px;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  }
+  .req-grid{ display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
   .req-card{
     border:1px solid var(--card-border);
-    border-radius:14px; overflow:hidden; background:#fff;
-    box-shadow:0 6px 16px rgba(18,22,31,0.06);
+    border-radius:14px; overflow:hidden; background:var(--card-bg);
+    box-shadow:0 6px 16px rgba(0,0,0,.06);
   }
   .req-thumb{ width:100%; aspect-ratio: 16/10; object-fit:cover; background:#f2f4f8; }
   .req-body{ padding:.9rem 1rem 1.1rem 1rem; }
@@ -128,15 +123,34 @@
       @endif
     </div>
 
-    {{-- Hours --}}
+    {{-- Duration: Hours + Minutes (any; min total 1 minute) --}}
     <div class="mb-3">
-      <label class="form-label fw-bold">2) Number of hours</label>
-      <div class="slider-wrap">
-        <input type="range" min="1" max="12" step="1" id="hoursRange" name="duration_hours"
-               value="{{ old('duration_hours', 4) }}" class="form-range" style="max-width:340px;">
-        <span class="value-badge" id="hoursBadge">{{ old('duration_hours', 4) }}h</span>
+      <label class="form-label fw-bold">2) Set duration</label>
+      <div class="duration-wrap">
+        <div>
+          <label class="form-label">Hours</label>
+          <input type="number" name="duration_h" id="durationH"
+                 class="form-control pill-input"
+                 min="0" step="1"
+                 value="{{ old('duration_h', 0) }}">
+        </div>
+        <div>
+          <label class="form-label">Minutes</label>
+          <input type="number" name="duration_m" id="durationM"
+                 class="form-control pill-input"
+                 min="0" max="59" step="1"
+                 value="{{ old('duration_m', 30) }}">
+        </div>
       </div>
-      <div class="form-text ms-1">Hold & drag. Min 1 hr, max 12 hrs.</div>
+      <div class="hint mt-2">
+        Minimum 1 minute. No maximum hours. (Minutes field supports 0–59.)
+      </div>
+
+      {{-- Live due-time preview --}}
+      <div class="preview mt-2" id="durationPreview" hidden>
+        <div class="label">Will be due at</div>
+        <div class="value" id="duePreview">—</div>
+      </div>
     </div>
 
     {{-- Purpose --}}
@@ -219,14 +233,39 @@
     if (checked) checked.closest('.laptop-card').classList.add('active');
   }
 
-  // Hours slider badge
-  const hoursRange = document.getElementById('hoursRange');
-  const hoursBadge = document.getElementById('hoursBadge');
-  if (hoursRange && hoursBadge){
-    const sync = () => hoursBadge.textContent = hoursRange.value + 'h';
-    hoursRange.addEventListener('input', sync);
-    sync();
+  // Live due-time preview
+  const H = document.getElementById('durationH');
+  const M = document.getElementById('durationM');
+  const previewWrap = document.getElementById('durationPreview');
+  const duePreview  = document.getElementById('duePreview');
+
+  function fmtDate(dt){
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let h = dt.getHours();
+    const m = String(dt.getMinutes()).padStart(2,'0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${months[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()} ${h}:${m} ${ampm}`;
+    }
+
+  function updatePreview(){
+    const hh = parseInt(H.value || '0', 10);
+    const mm = parseInt(M.value || '0', 10);
+    const total = (hh * 60) + mm;
+
+    if (total >= 1){
+      const now = new Date();
+      const due = new Date(now.getTime() + total*60000);
+      duePreview.textContent = fmtDate(due);
+      previewWrap.hidden = false;
+    } else {
+      previewWrap.hidden = true;
+    }
   }
+
+  H.addEventListener('input', updatePreview);
+  M.addEventListener('input', updatePreview);
+  updatePreview();
 </script>
 @endpush
 @endsection
