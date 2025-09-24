@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\LaptopController as AdminLaptopController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\IpAssetController as AdminIpAssetController;
 use App\Http\Controllers\Admin\BorrowingController as AdminBorrowingController;
-use App\Http\Controllers\Admin\HistoryController as AdminHistoryController; // ⬅️ add this line
+use App\Http\Controllers\Admin\HistoryController as AdminHistoryController;
 
 // Student auth/controllers
 use App\Http\Controllers\Student\HomeController as StudentHomeController;
@@ -106,10 +106,13 @@ Route::prefix('student')
     ->name('student.')
     ->middleware(['auth', 'role:student'])
     ->group(function () {
-        Route::get('/home', [StudentHomeController::class, 'index'])->name('home');
+        Route::get('/home',   [StudentHomeController::class, 'index'])->name('home');
+
         Route::get('/borrow',  [StudentBorrowController::class, 'index'])->name('borrow');
         Route::post('/borrow', [StudentBorrowController::class, 'store'])->name('borrow.store');
-        Route::view('/history', 'student.history')->name('history');
+
+        // History must use controller so it can pass $ongoing and $recent to the Blade
+        Route::get('/history', [StudentBorrowController::class, 'history'])->name('history');
     });
 
 /*

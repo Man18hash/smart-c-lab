@@ -30,7 +30,7 @@ class BorrowController extends Controller
                 'address'      => '',
                 'adviser'      => null,
                 'phone_number' => null,
-                'email'        => Auth::user()->email,
+                'email'        => Auth::user()->email ?? null,
                 'status'       => 'active',
             ]);
         }
@@ -58,7 +58,7 @@ class BorrowController extends Controller
 
         $validated = $request->validate([
             'laptop_id'  => ['required', 'exists:laptops,id'],
-            'duration_h' => ['required', 'integer', 'min:0'],        // no upper limit
+            'duration_h' => ['required', 'integer', 'min:0'],           // no upper limit
             'duration_m' => ['required', 'integer', 'min:0', 'max:59'], // minutes field
             'purpose'    => ['nullable', 'string', 'max:255'],
         ]);
@@ -112,5 +112,29 @@ class BorrowController extends Controller
         return redirect()
             ->route('student.borrow')
             ->with('success', 'Borrow request submitted. Status is now "Pending".');
+    }
+
+    /**
+     * History page: same display shape as Home (Ongoing + Recent Requests).
+     */
+    public function history()
+    {
+        $student = Student::where('user_id', Auth::id())->firstOrFail();
+
+        // Ongoing = approved or checked_out with a due date
+        $ongoing = Borrowing::with('laptop')
+            ->where('student_id', $student->id)
+            ->whereIn('status', ['approved','checked_out'])
+            ->whereNotNull('due_at')
+            ->orderByDesc('requested_at')
+            ->get();
+
+        // Recent = full history (paginated) newest first
+        $recent = Borrowing::with('laptop')
+            ->where('student_id', $student->id)
+            ->orderByDesc('requested_at')
+            ->paginate(12);
+
+        return view('student.history', compact('ongoing','recent'));
     }
 }
