@@ -114,7 +114,7 @@ if exist "C:\smart-c-lab" (
     git pull origin main
 ) else (
     echo Cloning repository...
-    git clone https://github.com/YOUR_USERNAME/smart-c-lab.git C:\smart-c-lab
+    git clone https://github.com/Man18hash/smart-c-lab.git C:\smart-c-lab
 )
 
 echo.
