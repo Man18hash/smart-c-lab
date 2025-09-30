@@ -96,7 +96,7 @@
         <div class="modal fade" id="editLaptopModal-{{ $laptop->id }}" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
-              <form method="POST" action="{{ route('laptop.update', $laptop) }}" enctype="multipart/form-data">
+              <form method="POST" action="{{ route('admin.laptop.update', $laptop) }}" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-light);">
@@ -165,7 +165,7 @@
         <div class="modal fade" id="deleteLaptopModal-{{ $laptop->id }}" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
-              <form method="POST" action="{{ route('laptop.destroy', $laptop) }}">
+              <form method="POST" action="{{ route('admin.laptop.destroy', $laptop) }}">
                 @csrf
                 @method('DELETE')
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-light);">
@@ -234,7 +234,7 @@
 <div class="modal fade" id="createLaptopModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
-      <form method="POST" action="{{ route('laptop.store') }}" enctype="multipart/form-data">
+      <form method="POST" action="{{ route('admin.laptop.store') }}" enctype="multipart/form-data">
         @csrf
         <div class="modal-header" style="border-bottom: 1px solid var(--border-light);">
           <h5 class="modal-title" style="font-weight: 600;">Add New Laptop</h5>
