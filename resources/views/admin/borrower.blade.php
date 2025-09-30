@@ -174,8 +174,10 @@
             </td>
 
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal"
-                      data-bs-target="#viewBorrow-{{ $b->id }}">View More</button>
+              <button class="btn btn-sm btn-outline-secondary me-1" 
+                      data-bs-toggle="modal"
+                      data-bs-target="#viewBorrow-{{ $b->id }}"
+                      onclick="console.log('View More clicked for borrowing {{ $b->id }}')">View More</button>
 
               @if($b->status==='pending')
                 <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
@@ -195,12 +197,12 @@
           </tr>
 
           {{-- View More --}}
-          <div class="modal fade" id="viewBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal fade" id="viewBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true" aria-labelledby="viewBorrowLabel-{{ $b->id }}">
             <div class="modal-dialog modal-lg modal-dialog-centered">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h6 class="modal-title">Borrow Details</h6>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  <h6 class="modal-title" id="viewBorrowLabel-{{ $b->id }}">Borrow Details - ID: {{ $b->id }}</h6>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                   <div class="row g-3">
@@ -406,6 +408,31 @@
 
 <script>
 (function(){
+  // Debug modal functionality
+  console.log('Borrower page loaded');
+  console.log('Bootstrap version:', typeof bootstrap !== 'undefined' ? 'Loaded' : 'Not loaded');
+  
+  // Check if modals exist
+  document.addEventListener('DOMContentLoaded', function() {
+    const modals = document.querySelectorAll('[id^="viewBorrow-"]');
+    console.log('Found', modals.length, 'view modals');
+    
+    // Add click event listeners to View More buttons
+    document.querySelectorAll('[data-bs-target^="#viewBorrow-"]').forEach(button => {
+      button.addEventListener('click', function(e) {
+        const targetId = this.getAttribute('data-bs-target');
+        const modal = document.querySelector(targetId);
+        console.log('View More clicked, target:', targetId, 'modal exists:', !!modal);
+        
+        if (!modal) {
+          console.error('Modal not found:', targetId);
+          e.preventDefault();
+          return false;
+        }
+      });
+    });
+  });
+
   function fmt(ms){
     const neg = ms < 0; ms = Math.abs(ms);
     const s  = Math.floor(ms/1000);
