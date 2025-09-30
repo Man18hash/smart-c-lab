@@ -296,6 +296,40 @@
               <button type="submit" class="btn btn-outline-danger">Terminate Time (Check-In Now)</button>
             </form>
           @endif
+
+          @if($b->status === 'pending')
+            <hr class="my-3">
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" 
+                      data-bs-target="#approveBorrow-{{ $b->id }}" data-bs-dismiss="modal">
+                <i class="fas fa-check me-1"></i>Approve
+              </button>
+              <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" 
+                      data-bs-target="#declineBorrow-{{ $b->id }}" data-bs-dismiss="modal">
+                <i class="fas fa-times me-1"></i>Decline
+              </button>
+            </div>
+          @elseif($b->status === 'checked_out')
+            <hr class="my-3">
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-warning" data-bs-toggle="modal" 
+                      data-bs-target="#terminateBorrow-{{ $b->id }}" data-bs-dismiss="modal">
+                <i class="fas fa-stop me-1"></i>Terminate
+              </button>
+              <button type="button" class="btn btn-success" data-bs-toggle="modal" 
+                      data-bs-target="#checkinBorrow-{{ $b->id }}" data-bs-dismiss="modal">
+                <i class="fas fa-check-in me-1"></i>Check In
+              </button>
+            </div>
+          @elseif($b->status === 'returned')
+            <hr class="my-3">
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" 
+                      data-bs-target="#checkinAgain-{{ $b->id }}" data-bs-dismiss="modal">
+                <i class="fas fa-redo me-1"></i>Check-In Again
+              </button>
+            </div>
+          @endif
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
