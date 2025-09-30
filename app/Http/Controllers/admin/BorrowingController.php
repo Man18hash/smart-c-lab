@@ -27,15 +27,15 @@ class BorrowingController extends Controller
 
         if ($status === 'pending') {
             $base->where('status', 'pending');
-        } elseif ($status === 'approved') {
-            $base->whereIn('status', ['approved', 'checked_out']);
+        } elseif ($status === 'active') {
+            $base->where('status', 'checked_out');
         } elseif ($status === 'done') {
             $base->where('status', 'returned');
         }
 
         $borrowings = $base->paginate(10)->withQueryString();
 
-        // Cards: show currently checked out
+        // Cards: show currently checked out (approved requests now go directly to checked_out)
         $ongoingBorrowings = Borrowing::with(['student','laptop','ipAsset'])
             ->where('status', 'checked_out')
             ->orderBy('due_at')
@@ -58,7 +58,7 @@ class BorrowingController extends Controller
      * - Optionally assign an IP (marks it 'assigned').
      * - Optionally adjust due_at; if not provided, we shift the requested duration
      *   to START COUNTING FROM NOW (approval time) to avoid countdown while pending.
-     * - Mark laptop as 'reserved'.
+     * - Mark laptop as 'out' (directly checked out, no separate checkout step).
      */
     public function approve(Request $request, Borrowing $borrowing)
     {
@@ -90,19 +90,21 @@ class BorrowingController extends Controller
             $borrowing->due_at = now()->clone()->addMinutes($minutes);
         }
 
-        // Mark approved
-        $borrowing->status = 'approved';
+        // Mark as checked out directly (no separate checkout step)
+        $borrowing->status = 'checked_out';
         $borrowing->approved_at = now();
         $borrowing->approved_by_admin_id = Auth::id();
+        $borrowing->checked_out_at = now();
+        $borrowing->checked_out_by_admin_id = Auth::id();
         $borrowing->remarks = $data['remarks'] ?? null;
         $borrowing->save();
 
-        // Reserve device (if we track laptop status)
+        // Mark laptop as out (directly checked out)
         if ($borrowing->laptop) {
-            $borrowing->laptop->update(['status' => 'reserved']);
+            $borrowing->laptop->update(['status' => 'out']);
         }
 
-        return back()->with('success', 'Request approved.');
+        return back()->with('success', 'Request approved and laptop checked out.');
     }
 
     /**
@@ -182,6 +184,67 @@ class BorrowingController extends Controller
         $borrowing->save();
 
         return back()->with('success', 'Laptop checked in.');
+    }
+
+    /**
+     * Terminate/Done: Manually return laptop before time expires
+     */
+    public function terminate(Request $request, Borrowing $borrowing)
+    {
+        $data = $request->validate([
+            'remarks' => ['nullable','string','max:255'],
+        ]);
+
+        // Release laptop
+        if ($borrowing->laptop) {
+            $borrowing->laptop->update(['status' => 'available']);
+        }
+        // Release IP
+        if ($borrowing->ipAsset) {
+            $borrowing->ipAsset->update(['status' => 'free']);
+            $borrowing->ip_asset_id = null;
+        }
+
+        $borrowing->status = 'returned';
+        $borrowing->returned_at = now();
+        $borrowing->checked_in_by_admin_id = Auth::id();
+        $borrowing->remarks = $data['remarks'] ?? 'Manually terminated by admin';
+        $borrowing->save();
+
+        return back()->with('success', 'Laptop returned successfully.');
+    }
+
+    /**
+     * Auto-return expired borrowings (can be called via cron job)
+     */
+    public function autoReturnExpired()
+    {
+        $expiredBorrowings = Borrowing::where('status', 'checked_out')
+            ->where('due_at', '<', now())
+            ->with(['laptop', 'ipAsset'])
+            ->get();
+
+        $count = 0;
+        foreach ($expiredBorrowings as $borrowing) {
+            // Release laptop
+            if ($borrowing->laptop) {
+                $borrowing->laptop->update(['status' => 'available']);
+            }
+            // Release IP
+            if ($borrowing->ipAsset) {
+                $borrowing->ipAsset->update(['status' => 'free']);
+                $borrowing->ip_asset_id = null;
+            }
+
+            $borrowing->status = 'returned';
+            $borrowing->returned_at = now();
+            $borrowing->remarks = 'Auto-returned due to time expiry';
+            $borrowing->save();
+            
+            $count++;
+        }
+
+        return response()->json(['message' => "Auto-returned {$count} expired borrowings"]);
     }
 
     /**

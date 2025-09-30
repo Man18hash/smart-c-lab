@@ -28,14 +28,19 @@ class LaptopController extends Controller
         $path = null;
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('laptops', 'public'); // storage/app/public/laptops/...
+            \Log::info('Image uploaded successfully', ['path' => $path]);
+        } else {
+            \Log::info('No image file uploaded');
         }
 
-        Laptop::create([
+        $laptop = Laptop::create([
             'device_name' => $data['device_name'],
             'status'      => $data['status'],
             'notes'       => $data['notes'] ?? null,
             'image_path'  => $path,
         ]);
+
+        \Log::info('Laptop created', ['id' => $laptop->id, 'image_path' => $laptop->image_path]);
 
         return redirect()->route('admin.laptop')->with('success', 'Laptop added successfully.');
     }
@@ -50,34 +55,48 @@ class LaptopController extends Controller
             'remove_image' => ['nullable', 'boolean'],
         ]);
 
-        if ($request->boolean('remove_image') && $laptop->image_path) {
-            Storage::disk('public')->delete($laptop->image_path);
-            $laptop->image_path = null;
-        }
-
-        if ($request->hasFile('image')) {
-            if ($laptop->image_path) {
-                Storage::disk('public')->delete($laptop->image_path);
+        try {
+            // Handle image removal
+            if ($request->boolean('remove_image') && $laptop->image_path) {
+                if (Storage::disk('public')->exists($laptop->image_path)) {
+                    Storage::disk('public')->delete($laptop->image_path);
+                }
+                $laptop->image_path = null;
             }
-            $laptop->image_path = $request->file('image')->store('laptops', 'public');
+
+            // Handle new image upload
+            if ($request->hasFile('image')) {
+                // Delete old image if it exists
+                if ($laptop->image_path && Storage::disk('public')->exists($laptop->image_path)) {
+                    Storage::disk('public')->delete($laptop->image_path);
+                }
+                $laptop->image_path = $request->file('image')->store('laptops', 'public');
+            }
+
+            $laptop->device_name = $data['device_name'];
+            $laptop->status      = $data['status'];
+            $laptop->notes       = $data['notes'] ?? null;
+            $laptop->save();
+
+            return redirect()->route('admin.laptop')->with('success', 'Laptop updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->route('admin.laptop')->with('error', 'Failed to update laptop: ' . $e->getMessage());
         }
-
-        $laptop->device_name = $data['device_name'];
-        $laptop->status      = $data['status'];
-        $laptop->notes       = $data['notes'] ?? null;
-        $laptop->save();
-
-        return redirect()->route('admin.laptop')->with('success', 'Laptop updated.');
     }
 
     public function destroy(Laptop $laptop)
     {
-        if ($laptop->image_path) {
-            Storage::disk('public')->delete($laptop->image_path);
+        try {
+            // Delete the image file if it exists
+            if ($laptop->image_path && Storage::disk('public')->exists($laptop->image_path)) {
+                Storage::disk('public')->delete($laptop->image_path);
+            }
+
+            $laptop->delete();
+
+            return redirect()->route('admin.laptop')->with('success', 'Laptop deleted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->route('admin.laptop')->with('error', 'Failed to delete laptop: ' . $e->getMessage());
         }
-
-        $laptop->delete();
-
-        return redirect()->route('admin.laptop')->with('success', 'Laptop deleted.');
     }
 }

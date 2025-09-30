@@ -22,11 +22,14 @@ class HistoryController extends Controller
 
         if ($q !== '') {
             $query->where(function ($qq) use ($q) {
-                $qq->whereHas('student', fn ($s) => $s->where('first_name','like',"%{$q}%")
-                                                     ->orWhere('last_name','like',"%{$q}%")
-                                                     ->orWhere('email','like',"%{$q}%"))
-                   ->orWhereHas('laptop', fn ($l) => $l->where('device_name','like',"%{$q}%"))
-                   ->orWhere('purpose', 'like', "%{$q}%");
+                $qq->whereHas('student', function ($s) use ($q) {
+                    $s->where('full_name', 'like', "%{$q}%")
+                      ->orWhere('email', 'like', "%{$q}%");
+                })
+                ->orWhereHas('laptop', function ($l) use ($q) {
+                    $l->where('device_name', 'like', "%{$q}%");
+                })
+                ->orWhere('purpose', 'like', "%{$q}%");
             });
         }
 

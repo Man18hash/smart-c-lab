@@ -22,8 +22,11 @@ class LoginController extends Controller
             'password' => ['required','string'],
         ]);
 
+        // Try to authenticate with username first, then email
+        $loginField = filter_var($credentials['username'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        
         if (Auth::attempt([
-            'username' => $credentials['username'],
+            $loginField => $credentials['username'],
             'password' => $credentials['password'],
         ])) {
             $request->session()->regenerate();

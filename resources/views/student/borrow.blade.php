@@ -2,219 +2,221 @@
 @section('title', 'Borrow a Laptop')
 
 @section('content')
-<style>
-  :root{
-    --card-bg:#ffffff;
-    --card-border:#e9eef5;
-    --soft:#f6f8fc;
-    --ink:#111114;
-    --muted:#6b7280;
-    --brand:#0A84FF;
-    --brand-soft:rgba(10,132,255,.14);
-  }
-  @media (prefers-color-scheme:dark){
-    :root{ --card-bg:#151517; --card-border:#2C2C2E; --soft:#111114; --ink:#ECECEC; --muted:#9b9ba1; }
-  }
-
-  .section-card{
-    background:var(--card-bg);
-    border:1px solid var(--card-border);
-    border-radius:16px;
-    padding:1.25rem;
-    box-shadow:0 8px 24px rgba(0,0,0,.06);
-  }
-
-  .laptop-grid{
-    display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap:16px;
-  }
-  .laptop-card{
-    border:1px solid var(--card-border);
-    border-radius:14px;
-    overflow:hidden;
-    background:var(--card-bg);
-    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-    cursor:pointer;
-    position:relative;
-  }
-  .laptop-card:hover{ transform: translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.10); }
-  .laptop-card input[type="radio"]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
-  .laptop-thumb{ width:100%; aspect-ratio: 16/10; object-fit:cover; background:#f2f4f8; }
-  .laptop-body{ padding:.8rem .9rem 1rem .9rem; }
-  .laptop-name{ font-weight:800; color:var(--ink); font-size:1rem; line-height:1.2; }
-  .laptop-meta{ font-size:.9rem; color:var(--muted); }
-  .laptop-card.active{ border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
-
-  .duration-wrap{
-    display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:12px;
-  }
-  .pill-input{
-    border-radius:12px; border:1px solid var(--card-border); background:var(--soft);
-    padding:10px 12px; font-weight:700; color:var(--ink);
-  }
-  .hint{ color:var(--muted); }
-
-  .preview{
-    border:1px dashed var(--card-border);
-    border-radius:12px; padding:10px 12px; background:transparent; color:var(--ink);
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-  }
-  .preview .label{ font-weight:800; }
-  .preview .value{ font-variant-numeric: tabular-nums; font-weight:800; }
-
-  .status-badge { text-transform: capitalize; }
-  .req-grid{ display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
-  .req-card{
-    border:1px solid var(--card-border);
-    border-radius:14px; overflow:hidden; background:var(--card-bg);
-    box-shadow:0 6px 16px rgba(0,0,0,.06);
-  }
-  .req-thumb{ width:100%; aspect-ratio: 16/10; object-fit:cover; background:#f2f4f8; }
-  .req-body{ padding:.9rem 1rem 1.1rem 1rem; }
-  .req-title{ font-weight:800; color:var(--ink); }
-  .req-meta{ font-size:.92rem; color:var(--muted); }
-</style>
-
-{{-- Borrow Form --}}
-<div class="section-card">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0">Borrow a Laptop</h5>
+<!-- Borrow Form -->
+<div class="card-modern mb-4">
+  <div class="card-header-modern">
+    <h2 class="card-title-modern">Borrow a Laptop</h2>
+    <p class="card-subtitle-modern">Select a laptop and set your borrowing duration</p>
   </div>
 
-  @if(session('success'))
-    <div class="alert alert-success mb-3">{{ session('success') }}</div>
-  @endif
+  <div class="card-body-modern">
+    @if(session('success'))
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    @endif
 
-  @if ($errors->any())
-    <div class="alert alert-danger mb-3">
-      <ul class="mb-0">
-        @foreach ($errors->all() as $e)
-          <li>{{ $e }}</li>
-        @endforeach
-      </ul>
-    </div>
-  @endif
-
-  <form method="POST" action="{{ route('student.borrow.store') }}" id="borrowForm">
-    @csrf
-
-    {{-- Laptop selection --}}
-    <div class="mb-3">
-      <label class="form-label fw-bold">1) Choose a laptop</label>
-      @if($availableLaptops->count())
-        <div class="laptop-grid" id="laptopGrid">
-          @foreach($availableLaptops as $l)
-            @php $img = $l->imageUrl(); @endphp
-            <label class="laptop-card" data-id="{{ $l->id }}">
-              <input type="radio" name="laptop_id" value="{{ $l->id }}" @checked(old('laptop_id')==$l->id)>
-              <img class="laptop-thumb" src="{{ $img }}" alt="Laptop image"
-                   loading="lazy"
-                   onerror="this.onerror=null;this.src='{{ asset('images/no-image.png') }}';">
-              <div class="laptop-body">
-                <div class="laptop-name">{{ $l->device_name }}</div>
-                <div class="laptop-meta">Status: Available</div>
-              </div>
-            </label>
+    @if ($errors->any())
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <ul class="mb-0">
+          @foreach ($errors->all() as $e)
+            <li>{{ $e }}</li>
           @endforeach
-        </div>
-      @else
-        <div class="alert alert-warning">No laptops are currently available.</div>
-      @endif
-    </div>
-
-    {{-- Duration: Hours + Minutes (any; min total 1 minute) --}}
-    <div class="mb-3">
-      <label class="form-label fw-bold">2) Set duration</label>
-      <div class="duration-wrap">
-        <div>
-          <label class="form-label">Hours</label>
-          <input type="number" name="duration_h" id="durationH"
-                 class="form-control pill-input"
-                 min="0" step="1"
-                 value="{{ old('duration_h', 0) }}">
-        </div>
-        <div>
-          <label class="form-label">Minutes</label>
-          <input type="number" name="duration_m" id="durationM"
-                 class="form-control pill-input"
-                 min="0" max="59" step="1"
-                 value="{{ old('duration_m', 30) }}">
-        </div>
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
-      <div class="hint mt-2">
-        Minimum 1 minute. No maximum hours. (Minutes field supports 0–59.)
+    @endif
+
+    <form method="POST" action="{{ route('student.borrow.store') }}" id="borrowForm">
+      @csrf
+
+      <!-- Laptop Selection -->
+      <div class="mb-4">
+        <label class="form-label" style="font-weight: 600; font-size: 16px; margin-bottom: 16px;">
+          <i class="fas fa-laptop me-2"></i>
+          Choose a Laptop
+        </label>
+        
+        @if($availableLaptops->count())
+          <div class="device-grid" id="laptopGrid">
+            @foreach($availableLaptops as $l)
+              @php $img = $l->imageUrl(); @endphp
+              <label class="device-card" data-id="{{ $l->id }}" style="cursor: pointer;">
+                <input type="radio" name="laptop_id" value="{{ $l->id }}" 
+                       @checked(old('laptop_id')==$l->id) 
+                       style="position: absolute; opacity: 0; pointer-events: none;">
+                <img class="device-image" src="{{ $img }}" alt="Laptop image"
+                     loading="lazy"
+                     onerror="this.onerror=null;this.src='{{ asset('images/no-image.svg') }}';">
+                <div class="device-info">
+                  <h3 class="device-name">{{ $l->device_name }}</h3>
+                  <div class="device-status">
+                    <span class="status-badge status-returned">Available</span>
+                  </div>
+                  @if($l->notes)
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 0;">
+                      {{ \Illuminate\Support\Str::limit($l->notes, 80) }}
+                    </p>
+                  @endif
+                </div>
+              </label>
+            @endforeach
+          </div>
+        @else
+          <div class="text-center py-5">
+            <i class="fas fa-laptop" style="font-size: 64px; color: var(--text-muted); margin-bottom: 16px;"></i>
+            <h4 style="color: var(--text-secondary); margin-bottom: 8px;">No Laptops Available</h4>
+            <p style="color: var(--text-muted);">All laptops are currently checked out or under maintenance.</p>
+          </div>
+        @endif
       </div>
 
-      {{-- Live due-time preview --}}
-      <div class="preview mt-2" id="durationPreview" hidden>
-        <div class="label">Will be due at</div>
-        <div class="value" id="duePreview">—</div>
-      </div>
-    </div>
+      <!-- Duration Selection -->
+      <div class="mb-4">
+        <label class="form-label" style="font-weight: 600; font-size: 16px; margin-bottom: 16px;">
+          <i class="fas fa-clock me-2"></i>
+          Set Duration
+        </label>
+        
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight: 500;">Hours</label>
+            <input type="number" name="duration_h" id="durationH"
+                   class="form-control" 
+                   style="border-radius: var(--radius-md); padding: 12px 16px; font-weight: 500;"
+                   min="0" step="1"
+                   value="{{ old('duration_h', 0) }}"
+                   placeholder="0">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight: 500;">Minutes</label>
+            <input type="number" name="duration_m" id="durationM"
+                   class="form-control"
+                   style="border-radius: var(--radius-md); padding: 12px 16px; font-weight: 500;"
+                   min="0" max="59" step="1"
+                   value="{{ old('duration_m', 30) }}"
+                   placeholder="30">
+          </div>
+        </div>
+        
+        <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">
+          <i class="fas fa-info-circle me-1"></i>
+          Minimum 1 minute. No maximum limit.
+        </div>
 
-    {{-- Purpose --}}
-    <div class="mb-3">
-      <label class="form-label fw-bold">3) Purpose (optional)</label>
-      <input type="text" name="purpose" class="form-control" maxlength="255"
-             value="{{ old('purpose') }}" placeholder="e.g., Research project, assignment, etc.">
-    </div>
-
-    <button class="btn btn-primary" type="submit" id="submitBtn" {{ $availableLaptops->count() ? '' : 'disabled' }}>
-      Submit Request
-    </button>
-  </form>
-</div>
-
-{{-- My Requests --}}
-<div class="section-card mt-4">
-  <h5 class="mb-3">My Borrow Requests</h5>
-
-  @php
-    $statusMap = [
-      'pending'     => 'warning',
-      'approved'    => 'info',
-      'declined'    => 'danger',
-      'checked_out' => 'primary',
-      'returned'    => 'success',
-      'overdue'     => 'danger',
-    ];
-  @endphp
-
-  @if($borrowings->count())
-    <div class="req-grid">
-      @foreach($borrowings as $b)
-        @php
-          $badge = $statusMap[$b->status] ?? 'secondary';
-          $img   = $b->laptop?->imageUrl() ?? asset('images/no-image.png');
-        @endphp
-        <div class="req-card">
-          <img class="req-thumb" src="{{ $img }}" alt="Laptop"
-               loading="lazy"
-               onerror="this.onerror=null;this.src='{{ asset('images/no-image.png') }}';">
-          <div class="req-body">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <div class="req-title">{{ $b->laptop?->device_name ?? 'Laptop' }}</div>
-              <span class="badge bg-{{ $badge }} status-badge">{{ str_replace('_',' ',$b->status) }}</span>
-            </div>
-            <div class="req-meta">
-              <div><strong>Requested:</strong> {{ optional($b->requested_at)->format('M d, Y h:i A') ?? '—' }}</div>
-              <div><strong>Due:</strong> {{ optional($b->due_at)->format('M d, Y h:i A') ?? '—' }}</div>
-              @if($b->purpose)
-                <div class="mt-1"><strong>Purpose:</strong> <span class="text-muted">{{ \Illuminate\Support\Str::limit($b->purpose, 90) }}</span></div>
-              @endif
+        <!-- Live Due Time Preview -->
+        <div class="card-modern mt-3" id="durationPreview" style="display: none;">
+          <div class="card-body-modern">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <h6 style="font-weight: 600; margin: 0; color: var(--text-primary);">Due Time</h6>
+                <p style="font-size: 14px; color: var(--text-muted); margin: 4px 0 0 0;">Your laptop will be due at:</p>
+              </div>
+              <div class="text-end">
+                <div id="duePreview" style="font-size: 18px; font-weight: 700; color: var(--primary);">—</div>
+              </div>
             </div>
           </div>
         </div>
-      @endforeach
-    </div>
+      </div>
 
-    <div class="mt-3">
-      @php echo $borrowings->withQueryString()->onEachSide(1)->links('pagination::bootstrap-5'); @endphp
-    </div>
-  @else
-    <div class="text-muted">No requests yet.</div>
-  @endif
+      <!-- Purpose -->
+      <div class="mb-4">
+        <label class="form-label" style="font-weight: 600; font-size: 16px; margin-bottom: 16px;">
+          <i class="fas fa-edit me-2"></i>
+          Purpose (Optional)
+        </label>
+        <input type="text" name="purpose" class="form-control" maxlength="255"
+               style="border-radius: var(--radius-md); padding: 12px 16px;"
+               value="{{ old('purpose') }}" 
+               placeholder="e.g., Research project, assignment, presentation, etc.">
+        <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">
+          <i class="fas fa-lightbulb me-1"></i>
+          Help us understand how you'll be using the laptop
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-primary-modern" type="submit" id="submitBtn" 
+                style="padding: 12px 24px; font-size: 16px; font-weight: 600;"
+                {{ $availableLaptops->count() ? '' : 'disabled' }}>
+          <i class="fas fa-paper-plane"></i>
+          <span>Submit Request</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- My Requests -->
+<div class="card-modern">
+  <div class="card-header-modern">
+    <h2 class="card-title-modern">My Borrow Requests</h2>
+    <p class="card-subtitle-modern">Track your current and past borrowing requests</p>
+  </div>
+
+  <div class="card-body-modern">
+    @if($borrowings->count())
+      <div class="device-grid">
+        @foreach($borrowings as $b)
+          @php
+            $badgeMap = [
+              'pending'     => 'status-pending',
+              'approved'    => 'status-approved',
+              'declined'    => 'status-declined',
+              'checked_out' => 'status-checked_out',
+              'returned'    => 'status-returned',
+              'overdue'     => 'status-declined',
+            ];
+            $badgeClass = $badgeMap[$b->status] ?? 'status-pending';
+            $img = $b->laptop?->imageUrl() ?? asset('images/no-image.svg');
+          @endphp
+          <div class="device-card">
+            <img class="device-image" src="{{ $img }}" alt="Laptop"
+                 loading="lazy"
+                 onerror="this.onerror=null;this.src='{{ asset('images/no-image.svg') }}';">
+            <div class="device-info">
+              <h3 class="device-name">{{ $b->laptop?->device_name ?? 'Laptop' }}</h3>
+              
+              <div class="device-status">
+                <span class="status-badge {{ $badgeClass }}">
+                  {{ str_replace('_', ' ', $b->status) }}
+                </span>
+              </div>
+              
+              <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">
+                <div><strong>Requested:</strong> {{ optional($b->requested_at)->format('M d, Y h:i A') ?? '—' }}</div>
+                @if($b->due_at)
+                  <div><strong>Due:</strong> {{ $b->due_at->format('M d, Y h:i A') }}</div>
+                @endif
+              </div>
+              
+              @if($b->purpose)
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 0;">
+                  <strong>Purpose:</strong> {{ \Illuminate\Support\Str::limit($b->purpose, 100) }}
+                </p>
+              @endif
+            </div>
+          </div>
+        @endforeach
+      </div>
+
+      @if($borrowings instanceof \Illuminate\Contracts\Pagination\Paginator && $borrowings->hasPages())
+        <div class="mt-4">
+          {{ $borrowings->withQueryString()->onEachSide(1)->links('pagination::bootstrap-5') }}
+        </div>
+      @endif
+    @else
+      <div class="text-center py-5">
+        <i class="fas fa-inbox" style="font-size: 64px; color: var(--text-muted); margin-bottom: 16px;"></i>
+        <h4 style="color: var(--text-secondary); margin-bottom: 8px;">No Requests Yet</h4>
+        <p style="color: var(--text-muted);">You haven't made any borrowing requests yet.</p>
+      </div>
+    @endif
+  </div>
 </div>
 
 @push('scripts')
@@ -224,20 +226,21 @@
   if (grid){
     grid.addEventListener('change', (e) => {
       if (e.target && e.target.name === 'laptop_id') {
-        [...grid.querySelectorAll('.laptop-card')].forEach(c => c.classList.remove('active'));
-        e.target.closest('.laptop-card').classList.add('active');
+        [...grid.querySelectorAll('.device-card')].forEach(c => c.classList.remove('active'));
+        e.target.closest('.device-card').classList.add('active');
       }
     });
+    
     // Re-apply selection after validation errors
     const checked = grid.querySelector('input[name="laptop_id"]:checked');
-    if (checked) checked.closest('.laptop-card').classList.add('active');
+    if (checked) checked.closest('.device-card').classList.add('active');
   }
 
   // Live due-time preview
   const H = document.getElementById('durationH');
   const M = document.getElementById('durationM');
   const previewWrap = document.getElementById('durationPreview');
-  const duePreview  = document.getElementById('duePreview');
+  const duePreview = document.getElementById('duePreview');
 
   function fmtDate(dt){
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -246,7 +249,7 @@
     const ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     return `${months[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()} ${h}:${m} ${ampm}`;
-    }
+  }
 
   function updatePreview(){
     const hh = parseInt(H.value || '0', 10);
@@ -257,15 +260,26 @@
       const now = new Date();
       const due = new Date(now.getTime() + total*60000);
       duePreview.textContent = fmtDate(due);
-      previewWrap.hidden = false;
+      previewWrap.style.display = 'block';
     } else {
-      previewWrap.hidden = true;
+      previewWrap.style.display = 'none';
     }
   }
 
   H.addEventListener('input', updatePreview);
   M.addEventListener('input', updatePreview);
   updatePreview();
+
+  // Add active state styling for selected laptop cards
+  const style = document.createElement('style');
+  style.textContent = `
+    .device-card.active {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+      transform: translateY(-2px);
+    }
+  `;
+  document.head.appendChild(style);
 </script>
 @endpush
 @endsection

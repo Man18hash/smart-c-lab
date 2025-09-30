@@ -15,7 +15,7 @@ class RegisterController extends Controller
 {
     public function showForm()
     {
-        return view('student.auth.register');
+        return view('auth.register');
     }
 
     public function register(Request $request)
@@ -67,6 +67,6 @@ class RegisterController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('student.home');
+        return redirect()->route('student.home')->with('success', 'Account created successfully! Welcome to Smart C Lab.');
     }
 }

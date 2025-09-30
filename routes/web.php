@@ -43,8 +43,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/student/register', [StudentRegisterController::class, 'showForm'])->name('student.register');
     Route::post('/student/register', [StudentRegisterController::class, 'register'])->name('student.register.store');
 
-    Route::get('/student/login', [StudentLoginController::class, 'showLoginForm'])->name('student.login');
-    Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login.attempt');
+    // Redirect old student login to main login
+    Route::get('/student/login', fn () => redirect()->route('login'))->name('student.login');
 });
 
 /*
@@ -74,11 +74,14 @@ Route::prefix('admin')
         Route::post('/borrower/{borrowing}/check-out', [AdminBorrowingController::class, 'checkOut'])->name('borrowing.checkout');
         Route::post('/borrower/{borrowing}/check-in',  [AdminBorrowingController::class, 'checkIn'])->name('borrowing.checkin');
         Route::post('/borrower/{borrowing}/stop-timer',[AdminBorrowingController::class, 'checkIn'])->name('borrowing.stop-timer');
+        Route::post('/borrower/{borrowing}/terminate', [AdminBorrowingController::class, 'terminate'])->name('borrowing.terminate');
+        Route::post('/borrower/auto-return-expired',   [AdminBorrowingController::class, 'autoReturnExpired'])->name('borrowing.auto-return');
 
         // Student CRUD
         Route::get('/student',               [AdminStudentController::class, 'index'])->name('student');
         Route::post('/student',              [AdminStudentController::class, 'store'])->name('student.store');
         Route::put('/student/{student}',     [AdminStudentController::class, 'update'])->name('student.update');
+        Route::put('/student/{student}/change-password', [AdminStudentController::class, 'changePassword'])->name('student.change-password');
         Route::delete('/student/{student}',  [AdminStudentController::class, 'destroy'])->name('student.destroy');
 
         // Laptop CRUD
@@ -114,6 +117,7 @@ Route::prefix('student')
         // History must use controller so it can pass $ongoing and $recent to the Blade
         Route::get('/history', [StudentBorrowController::class, 'history'])->name('history');
     });
+
 
 /*
 |--------------------------------------------------------------------------

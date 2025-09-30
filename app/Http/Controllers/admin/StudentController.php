@@ -56,4 +56,20 @@ class StudentController extends Controller
         $student->delete();
         return redirect()->route('admin.student')->with('success', 'Student deleted.');
     }
+
+    public function changePassword(Request $request, Student $student)
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        // Update the associated user's password
+        if ($student->user) {
+            $student->user->update([
+                'password' => bcrypt($data['password'])
+            ]);
+        }
+
+        return redirect()->route('admin.student')->with('success', 'Password changed successfully for ' . $student->full_name);
+    }
 }

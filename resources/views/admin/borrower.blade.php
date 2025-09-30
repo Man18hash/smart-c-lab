@@ -87,7 +87,7 @@
     </form>
   </div>
 
-  @php $tabs = ['pending'=>'Pending','approved'=>'Approved','done'=>'Done']; @endphp
+  @php $tabs = ['pending'=>'Pending','active'=>'Active','done'=>'Done']; @endphp
   <ul class="nav nav-pills filter-pills justify-content-center mb-3">
     @foreach($tabs as $key=>$label)
       <li class="nav-item">
@@ -182,10 +182,9 @@
                         data-bs-target="#approveBorrow-{{ $b->id }}">Approve</button>
                 <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
                         data-bs-target="#declineBorrow-{{ $b->id }}">Decline</button>
-              @elseif($b->status==='approved')
-                <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                        data-bs-target="#checkoutBorrow-{{ $b->id }}">Check Out</button>
               @elseif($b->status==='checked_out')
+                <button class="btn btn-sm btn-warning me-1" data-bs-toggle="modal"
+                        data-bs-target="#terminateBorrow-{{ $b->id }}">Terminate</button>
                 <button class="btn btn-sm btn-success" data-bs-toggle="modal"
                         data-bs-target="#checkinBorrow-{{ $b->id }}">Check In</button>
               @elseif($done)
@@ -267,7 +266,7 @@
                 <form method="POST" action="{{ route('admin.borrowing.approve', $b) }}">
                   @csrf
                   <div class="modal-header">
-                    <h6 class="modal-title">Approve Request</h6>
+                    <h6 class="modal-title">Approve & Check Out</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                   </div>
                   <div class="modal-body">
@@ -295,7 +294,7 @@
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Approve</button>
+                    <button type="submit" class="btn btn-primary">Approve & Check Out</button>
                   </div>
                 </form>
               </div>
@@ -325,23 +324,24 @@
             </div>
           </div>
 
-          {{-- Check-Out --}}
-          <div class="modal fade" id="checkoutBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+          {{-- Terminate --}}
+          <div class="modal fade" id="terminateBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
               <div class="modal-content">
-                <form method="POST" action="{{ route('admin.borrowing.checkout', $b) }}">
+                <form method="POST" action="{{ route('admin.borrowing.terminate', $b) }}">
                   @csrf
                   <div class="modal-header">
-                    <h6 class="modal-title">Check Out Laptop</h6>
+                    <h6 class="modal-title">Terminate Borrowing</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                   </div>
                   <div class="modal-body">
+                    <p class="mb-3">This will immediately return the laptop and end the borrowing session.</p>
                     <label class="form-label">Remarks (optional)</label>
-                    <textarea name="remarks" class="form-control" rows="3"></textarea>
+                    <textarea name="remarks" class="form-control" rows="3" placeholder="Reason for termination..."></textarea>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Check Out</button>
+                    <button type="submit" class="btn btn-warning">Terminate</button>
                   </div>
                 </form>
               </div>
@@ -434,6 +434,31 @@
       const diff = new Date(iso).getTime() - now;
       el.textContent = '(' + fmt(diff) + ')';
       if(diff<=0) el.classList.add('overdue'); else el.classList.remove('overdue');
+    });
+
+    // Check for expired borrowings and auto-return them
+    const expiredElements = document.querySelectorAll('.countdown[data-due]');
+    expiredElements.forEach(el => {
+      const iso = el.getAttribute('data-due');
+      if (iso) {
+        const diff = new Date(iso).getTime() - now;
+        if (diff <= 0 && !el.classList.contains('auto-returned')) {
+          el.classList.add('auto-returned');
+          // Auto-return expired borrowing
+          fetch('{{ route("admin.borrowing.auto-return") }}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+          }).then(response => response.json())
+            .then(data => {
+              console.log(data.message);
+              // Reload page to reflect changes
+              setTimeout(() => location.reload(), 2000);
+            });
+        }
+      }
     });
   }
   tick(); setInterval(tick, 1000);
