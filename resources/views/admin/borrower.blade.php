@@ -196,204 +196,6 @@
             </td>
           </tr>
 
-          {{-- View More --}}
-          <div class="modal fade" id="viewBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true" aria-labelledby="viewBorrowLabel-{{ $b->id }}">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h6 class="modal-title" id="viewBorrowLabel-{{ $b->id }}">Borrow Details - ID: {{ $b->id }}</h6>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="row g-3">
-                    <div class="col-md-5">
-                      <img class="w-100 rounded" src="{{ $img }}" alt="Laptop"
-                           onerror="this.onerror=null;this.src='{{ asset('images/no-image.png') }}';">
-                    </div>
-                    <div class="col-md-7">
-                      <div><strong>Laptop:</strong> {{ $b->laptop?->device_name ?? '—' }}</div>
-                      <div><strong>Borrower:</strong> {{ $b->student?->full_name ?? '—' }} ({{ $b->student?->email ?? '—' }})</div>
-                      <div><strong>Purpose:</strong> {{ $b->purpose ?: '—' }}</div>
-
-                      @if($b->status === 'pending')
-                        @if($requestedHours)
-                          <div class="mt-2"><strong>Requested:</strong> {{ $requestedHours }}h <em>(starts when approved)</em></div>
-                        @endif
-                      @else
-                        <div class="mt-2">
-                          <strong>Due:</strong>
-                          {{ optional($b->due_at)->format('M d, Y h:i A') ?? '—' }}
-                          @if($b->due_at && in_array($b->status,['approved','checked_out']))
-                            <span class="cd-inline" data-due="{{ $b->due_at->toIso8601String() }}">(—)</span>
-                          @endif
-                        </div>
-                      @endif
-
-                      <div><strong>Status:</strong> {{ ucfirst(str_replace('_',' ',$b->status)) }}</div>
-
-                      @php
-                        $lat = $b->ipAsset->latitude ?? null;
-                        $lng = $b->ipAsset->longitude ?? null;
-                        $label = $b->ipAsset?->notes ?: $b->ipAsset?->name;
-                      @endphp
-                      @if($label)<div class="mt-2"><strong>Location:</strong> {{ $label }}</div>@endif
-
-                      @if($lat && $lng)
-                        <div id="modal-map-{{ $b->id }}" class="w-100" style="height:260px;border-radius:10px;overflow:hidden;border:1px solid #eef1f6"
-                             data-lat="{{ $lat }}" data-lng="{{ $lng }}"></div>
-                      @endif
-                    </div>
-                  </div>
-
-                  @if($b->due_at && in_array($b->status,['approved','checked_out']))
-                    <hr class="my-3">
-                    <form method="POST" action="{{ route('admin.borrowing.stop-timer', $b) }}"
-                          onsubmit="return confirm('Stop timer (check-in now)?');">
-                      @csrf
-                      <button type="submit" class="btn btn-outline-danger">Terminate Time (Check-In Now)</button>
-                    </form>
-                  @endif
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {{-- Approve --}}
-          <div class="modal fade" id="approveBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <form method="POST" action="{{ route('admin.borrowing.approve', $b) }}">
-                  @csrf
-                  <div class="modal-header">
-                    <h6 class="modal-title">Approve & Check Out</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <div class="mb-3">
-                      <label class="form-label">Adjust Due (optional)</label>
-                      <input type="datetime-local" name="due_at" class="form-control"
-                             value="">
-                      <div class="form-text">Leave blank to start the timer from now using the requested hours.</div>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Assign IP (optional)</label>
-                      <select name="ip_asset_id" class="form-select">
-                        <option value="">— No IP —</option>
-                        @foreach($freeIps as $ip)
-                          <option value="{{ $ip->id }}">{{ $ip->name }} ({{ $ip->ip_address }})</option>
-                        @endforeach
-                      </select>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Remarks (optional)</label>
-                      <textarea name="remarks" class="form-control" rows="2"></textarea>
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Approve & Check Out</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          {{-- Decline --}}
-          <div class="modal fade" id="declineBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <form method="POST" action="{{ route('admin.borrowing.decline', $b) }}">
-                  @csrf
-                  <div class="modal-header">
-                    <h6 class="modal-title">Decline Request</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <label class="form-label">Remarks (optional)</label>
-                    <textarea name="remarks" class="form-control" rows="3"></textarea>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Decline</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          {{-- Terminate --}}
-          <div class="modal fade" id="terminateBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <form method="POST" action="{{ route('admin.borrowing.terminate', $b) }}">
-                  @csrf
-                  <div class="modal-header">
-                    <h6 class="modal-title">Terminate Borrowing</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <p class="mb-3">This will immediately return the laptop and end the borrowing session.</p>
-                    <label class="form-label">Remarks (optional)</label>
-                    <textarea name="remarks" class="form-control" rows="3" placeholder="Reason for termination..."></textarea>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Terminate</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          {{-- Check-In / Again --}}
-          <div class="modal fade" id="checkinBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <form method="POST" action="{{ route('admin.borrowing.checkin', $b) }}">
-                  @csrf
-                  <div class="modal-header">
-                    <h6 class="modal-title">Check In Laptop</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <label class="form-label">Remarks (optional)</label>
-                    <textarea name="remarks" class="form-control" rows="3"></textarea>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Check In</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal fade" id="checkinAgain-{{ $b->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <form method="POST" action="{{ route('admin.borrowing.checkin', $b) }}">
-                  @csrf
-                  <div class="modal-header">
-                    <h6 class="modal-title">Check-In Again</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <label class="form-label">Remarks (optional)</label>
-                    <textarea name="remarks" class="form-control" rows="3"></textarea>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Confirm</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
         @empty
           <tr><td colspan="5" class="text-muted">No requests found.</td></tr>
         @endforelse
@@ -406,6 +208,234 @@
   @endif
 </div>
 
+{{-- Modals for all borrowings (both ongoing and table) --}}
+@php
+  // Collect all borrowings that need modals
+  $allBorrowings = collect();
+  if (isset($ongoingBorrowings)) {
+    $allBorrowings = $allBorrowings->merge($ongoingBorrowings);
+  }
+  $allBorrowings = $allBorrowings->merge($borrowings);
+  $allBorrowings = $allBorrowings->unique('id');
+@endphp
+
+@foreach($allBorrowings as $b)
+  @php
+    $img = $b->laptop?->imageUrl() ?? asset('images/no-image.png');
+    $locLabel = $b->ipAsset?->notes ?: $b->ipAsset?->name;
+    $lat = $b->ipAsset->latitude ?? null;
+    $lng = $b->ipAsset->longitude ?? null;
+    
+    // derive requested hours if student picked hours on request
+    $requestedHours = null;
+    if ($b->requested_at && $b->due_at) {
+      $mins = $b->requested_at->diffInMinutes($b->due_at, false);
+      if ($mins > 0) $requestedHours = max(1, (int) ceil($mins / 60));
+    }
+  @endphp
+
+  {{-- View More Modal --}}
+  <div class="modal fade" id="viewBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true" aria-labelledby="viewBorrowLabel-{{ $b->id }}">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="viewBorrowLabel-{{ $b->id }}">Borrow Details - ID: {{ $b->id }}</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-5">
+              <img class="w-100 rounded" src="{{ $img }}" alt="Laptop"
+                   onerror="this.onerror=null;this.src='{{ asset('images/no-image.png') }}';">
+            </div>
+            <div class="col-md-7">
+              <div><strong>Laptop:</strong> {{ $b->laptop?->device_name ?? '—' }}</div>
+              <div><strong>Borrower:</strong> {{ $b->student?->full_name ?? '—' }} ({{ $b->student?->email ?? '—' }})</div>
+              <div><strong>Purpose:</strong> {{ $b->purpose ?: '—' }}</div>
+
+              @if($b->status === 'pending')
+                @if($requestedHours)
+                  <div class="mt-2"><strong>Requested:</strong> {{ $requestedHours }}h <em>(starts when approved)</em></div>
+                @endif
+              @else
+                <div class="mt-2">
+                  <strong>Due:</strong>
+                  {{ optional($b->due_at)->format('M d, Y h:i A') ?? '—' }}
+                  @if($b->due_at && in_array($b->status,['approved','checked_out']))
+                    <span class="cd-inline" data-due="{{ $b->due_at->toIso8601String() }}">(—)</span>
+                  @endif
+                </div>
+              @endif
+
+              <div><strong>Status:</strong> {{ ucfirst(str_replace('_',' ',$b->status)) }}</div>
+
+              @if($locLabel)<div class="mt-2"><strong>Location:</strong> {{ $locLabel }}</div>@endif
+
+              @if($lat && $lng)
+                <div id="modal-map-{{ $b->id }}" class="w-100" style="height:260px;border-radius:10px;overflow:hidden;border:1px solid #eef1f6"
+                     data-lat="{{ $lat }}" data-lng="{{ $lng }}"></div>
+              @endif
+            </div>
+          </div>
+
+          @if($b->due_at && in_array($b->status,['approved','checked_out']))
+            <hr class="my-3">
+            <form method="POST" action="{{ route('admin.borrowing.stop-timer', $b) }}"
+                  onsubmit="return confirm('Stop timer (check-in now)?');">
+              @csrf
+              <button type="submit" class="btn btn-outline-danger">Terminate Time (Check-In Now)</button>
+            </form>
+          @endif
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Approve Modal --}}
+  @if($b->status === 'pending')
+    <div class="modal fade" id="approveBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ route('admin.borrowing.approve', $b) }}">
+            @csrf
+            <div class="modal-header">
+              <h6 class="modal-title">Approve & Check Out</h6>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Adjust Due (optional)</label>
+                <input type="datetime-local" name="due_at" class="form-control"
+                       value="">
+                <div class="form-text">Leave blank to start the timer from now using the requested hours.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Assign IP (optional)</label>
+                <select name="ip_asset_id" class="form-select">
+                  <option value="">— No IP —</option>
+                  @foreach($freeIps as $ip)
+                    <option value="{{ $ip->id }}">{{ $ip->name }} ({{ $ip->ip_address }})</option>
+                  @endforeach
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Remarks (optional)</label>
+                <textarea name="remarks" class="form-control" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Approve & Check Out</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {{-- Decline Modal --}}
+    <div class="modal fade" id="declineBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ route('admin.borrowing.decline', $b) }}">
+            @csrf
+            <div class="modal-header">
+              <h6 class="modal-title">Decline Request</h6>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label class="form-label">Remarks (optional)</label>
+              <textarea name="remarks" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-danger">Decline</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  @endif
+
+  {{-- Terminate Modal --}}
+  @if($b->status === 'checked_out')
+    <div class="modal fade" id="terminateBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ route('admin.borrowing.terminate', $b) }}">
+            @csrf
+            <div class="modal-header">
+              <h6 class="modal-title">Terminate Borrowing</h6>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p class="mb-3">This will immediately return the laptop and end the borrowing session.</p>
+              <label class="form-label">Remarks (optional)</label>
+              <textarea name="remarks" class="form-control" rows="3" placeholder="Reason for termination..."></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-warning">Terminate</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {{-- Check-In Modal --}}
+    <div class="modal fade" id="checkinBorrow-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ route('admin.borrowing.checkin', $b) }}">
+            @csrf
+            <div class="modal-header">
+              <h6 class="modal-title">Check In Laptop</h6>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label class="form-label">Remarks (optional)</label>
+              <textarea name="remarks" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">Check In</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  @endif
+
+  {{-- Check-In Again Modal --}}
+  @if($b->status === 'returned')
+    <div class="modal fade" id="checkinAgain-{{ $b->id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ route('admin.borrowing.checkin', $b) }}">
+            @csrf
+            <div class="modal-header">
+              <h6 class="modal-title">Check-In Again</h6>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label class="form-label">Remarks (optional)</label>
+              <textarea name="remarks" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">Confirm</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  @endif
+@endforeach
+
 <script>
 (function(){
   // Debug modal functionality
@@ -415,10 +445,23 @@
   // Check if modals exist
   document.addEventListener('DOMContentLoaded', function() {
     const modals = document.querySelectorAll('[id^="viewBorrow-"]');
+    const buttons = document.querySelectorAll('[data-bs-target^="#viewBorrow-"]');
+    
     console.log('Found', modals.length, 'view modals');
+    console.log('Found', buttons.length, 'view more buttons');
+    
+    // Log all modal IDs
+    modals.forEach(modal => {
+      console.log('Modal ID:', modal.id);
+    });
+    
+    // Log all button targets
+    buttons.forEach(button => {
+      console.log('Button target:', button.getAttribute('data-bs-target'));
+    });
     
     // Add click event listeners to View More buttons
-    document.querySelectorAll('[data-bs-target^="#viewBorrow-"]').forEach(button => {
+    buttons.forEach(button => {
       button.addEventListener('click', function(e) {
         const targetId = this.getAttribute('data-bs-target');
         const modal = document.querySelector(targetId);
@@ -426,8 +469,18 @@
         
         if (!modal) {
           console.error('Modal not found:', targetId);
+          console.error('Available modals:', Array.from(modals).map(m => m.id));
           e.preventDefault();
           return false;
+        }
+        
+        // Try to manually show the modal
+        try {
+          const bsModal = new bootstrap.Modal(modal);
+          bsModal.show();
+          console.log('Modal shown successfully');
+        } catch (error) {
+          console.error('Error showing modal:', error);
         }
       });
     });
