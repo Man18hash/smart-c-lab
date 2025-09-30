@@ -9,10 +9,18 @@
         <h2 class="card-title-modern">Laptop Inventory</h2>
         <p class="card-subtitle-modern">Manage and track all laptops in the system</p>
       </div>
-      <button class="btn btn-primary-modern" data-bs-toggle="modal" data-bs-target="#createLaptopModal">
-        <i class="fas fa-plus"></i>
-        <span>Add New Laptop</span>
-      </button>
+      <div class="d-flex gap-2">
+        <form class="d-flex" method="GET" action="{{ route('admin.laptop') }}">
+          <input type="search" name="q" class="form-control me-2" placeholder="Search laptops..." value="{{ $q ?? '' }}">
+          <button class="btn btn-outline-secondary" type="submit">
+            <i class="fas fa-search"></i>
+          </button>
+        </form>
+        <button class="btn btn-primary-modern" data-bs-toggle="modal" data-bs-target="#createLaptopModal">
+          <i class="fas fa-plus"></i>
+          <span>Add New Laptop</span>
+        </button>
+      </div>
     </div>
   </div>
 

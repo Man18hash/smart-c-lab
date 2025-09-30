@@ -9,9 +9,17 @@
 <div class="bg-white rounded-3 shadow-sm p-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0">Students</h5>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
-      <i class="fa-solid fa-plus me-1"></i> Add Student
-    </button>
+    <div class="d-flex gap-2">
+      <form class="d-flex" method="GET" action="{{ route('admin.student') }}">
+        <input type="search" name="q" class="form-control me-2" placeholder="Search students..." value="{{ $q ?? '' }}">
+        <button class="btn btn-outline-secondary" type="submit">
+          <i class="fas fa-search"></i>
+        </button>
+      </form>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+        <i class="fa-solid fa-plus me-1"></i> Add Student
+      </button>
+    </div>
   </div>
 
   @if(session('success'))

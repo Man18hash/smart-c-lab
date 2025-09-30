@@ -9,10 +9,23 @@ use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $students = Student::orderBy('full_name')->paginate(12);
-        return view('admin.student', compact('students'));
+        $q = (string) $request->input('q', '');
+        
+        $query = Student::query();
+        
+        if ($q !== '') {
+            $query->where(function ($qq) use ($q) {
+                $qq->where('full_name', 'like', "%{$q}%")
+                   ->orWhere('email', 'like', "%{$q}%")
+                   ->orWhere('grade', 'like', "%{$q}%")
+                   ->orWhere('section', 'like', "%{$q}%");
+            });
+        }
+        
+        $students = $query->orderBy('full_name')->paginate(12)->withQueryString();
+        return view('admin.student', compact('students', 'q'));
     }
 
     public function store(Request $request)

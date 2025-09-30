@@ -10,10 +10,22 @@ use Illuminate\Validation\Rule;
 
 class LaptopController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $laptops = Laptop::orderByDesc('id')->paginate(12);
-        return view('admin.laptop', compact('laptops'));
+        $q = (string) $request->input('q', '');
+        
+        $query = Laptop::query();
+        
+        if ($q !== '') {
+            $query->where(function ($qq) use ($q) {
+                $qq->where('device_name', 'like', "%{$q}%")
+                   ->orWhere('status', 'like', "%{$q}%")
+                   ->orWhere('notes', 'like', "%{$q}%");
+            });
+        }
+        
+        $laptops = $query->orderByDesc('id')->paginate(12)->withQueryString();
+        return view('admin.laptop', compact('laptops', 'q'));
     }
 
     public function store(Request $request)
