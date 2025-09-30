@@ -178,6 +178,14 @@
                 <div class="modal-body" style="padding: 24px;">
                   <p class="mb-0">Are you sure you want to delete <strong>{{ $laptop->device_name }}</strong>?</p>
                   <p class="text-muted mt-2 mb-0">This action cannot be undone.</p>
+                  
+                  @if($laptop->borrowings()->count() > 0)
+                    <div class="alert alert-warning mt-3">
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                      <strong>Warning:</strong> This laptop has {{ $laptop->borrowings()->count() }} borrowing record(s). 
+                      Deleting it will also remove all associated borrowing history.
+                    </div>
+                  @endif
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-light);">
                   <button type="button" class="btn btn-secondary-modern" data-bs-dismiss="modal">Cancel</button>

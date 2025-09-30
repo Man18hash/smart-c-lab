@@ -18,6 +18,12 @@ class Laptop extends Model
         'notes',
     ];
 
+    // Relationships
+    public function borrowings()
+    {
+        return $this->hasMany(\App\Models\Borrowing::class);
+    }
+
     /**
      * Public URL via the /storage symlink, or fallback image.
      */

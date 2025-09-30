@@ -87,6 +87,14 @@ class LaptopController extends Controller
     public function destroy(Laptop $laptop)
     {
         try {
+            // Check if laptop has any borrowings
+            $borrowingsCount = $laptop->borrowings()->count();
+            
+            if ($borrowingsCount > 0) {
+                // Delete all associated borrowings first
+                $laptop->borrowings()->delete();
+            }
+
             // Delete the image file if it exists
             if ($laptop->image_path && Storage::disk('public')->exists($laptop->image_path)) {
                 Storage::disk('public')->delete($laptop->image_path);
@@ -94,7 +102,12 @@ class LaptopController extends Controller
 
             $laptop->delete();
 
-            return redirect()->route('admin.laptop')->with('success', 'Laptop deleted successfully.');
+            $message = 'Laptop deleted successfully.';
+            if ($borrowingsCount > 0) {
+                $message .= " Also deleted {$borrowingsCount} associated borrowing record(s).";
+            }
+
+            return redirect()->route('admin.laptop')->with('success', $message);
         } catch (\Exception $e) {
             return redirect()->route('admin.laptop')->with('error', 'Failed to delete laptop: ' . $e->getMessage());
         }
