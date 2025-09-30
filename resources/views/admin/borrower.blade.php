@@ -212,10 +212,20 @@
 @php
   // Collect all borrowings that need modals
   $allBorrowings = collect();
+  
+  // Add ongoing borrowings
   if (isset($ongoingBorrowings)) {
     $allBorrowings = $allBorrowings->merge($ongoingBorrowings);
   }
-  $allBorrowings = $allBorrowings->merge($borrowings);
+  
+  // Add table borrowings (handle pagination)
+  if ($borrowings instanceof \Illuminate\Contracts\Pagination\Paginator) {
+    $allBorrowings = $allBorrowings->merge($borrowings->items());
+  } else {
+    $allBorrowings = $allBorrowings->merge($borrowings);
+  }
+  
+  // Remove duplicates by ID
   $allBorrowings = $allBorrowings->unique('id');
 @endphp
 
