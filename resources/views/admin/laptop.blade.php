@@ -179,17 +179,29 @@
                   <p class="mb-0">Are you sure you want to delete <strong>{{ $laptop->device_name }}</strong>?</p>
                   <p class="text-muted mt-2 mb-0">This action cannot be undone.</p>
                   
-                  @if($laptop->borrowings()->count() > 0)
-                    <div class="alert alert-warning mt-3">
+                  @if($laptop->borrowings()->where('status', '!=', 'returned')->count() > 0)
+                    <div class="alert alert-danger mt-3">
                       <i class="fas fa-exclamation-triangle me-2"></i>
-                      <strong>Warning:</strong> This laptop has {{ $laptop->borrowings()->count() }} borrowing record(s). 
+                      <strong>Cannot Delete:</strong> This laptop is currently checked out or has pending requests. 
+                      Please check in the laptop and resolve all pending requests before deleting.
+                    </div>
+                  @elseif($laptop->borrowings()->count() > 0)
+                    <div class="alert alert-warning mt-3">
+                      <i class="fas fa-info-circle me-2"></i>
+                      <strong>Note:</strong> This laptop has {{ $laptop->borrowings()->count() }} completed borrowing record(s). 
                       Deleting it will also remove all associated borrowing history.
                     </div>
                   @endif
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-light);">
                   <button type="button" class="btn btn-secondary-modern" data-bs-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-danger-modern">Delete Laptop</button>
+                  @if($laptop->borrowings()->where('status', '!=', 'returned')->count() > 0)
+                    <button type="button" class="btn btn-danger-modern" disabled>
+                      <i class="fas fa-lock me-1"></i>Cannot Delete
+                    </button>
+                  @else
+                    <button type="submit" class="btn btn-danger-modern">Delete Laptop</button>
+                  @endif
                 </div>
               </form>
             </div>

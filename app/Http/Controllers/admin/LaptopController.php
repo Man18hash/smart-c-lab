@@ -87,12 +87,22 @@ class LaptopController extends Controller
     public function destroy(Laptop $laptop)
     {
         try {
-            // Check if laptop has any borrowings
-            $borrowingsCount = $laptop->borrowings()->count();
+            // Check if laptop is currently checked out or has pending requests
+            $activeBorrowings = $laptop->borrowings()->where('status', '!=', 'returned')->count();
             
-            if ($borrowingsCount > 0) {
-                // Delete all associated borrowings first
-                $laptop->borrowings()->delete();
+            if ($activeBorrowings > 0) {
+                return redirect()->route('admin.laptop')->with('error', 
+                    "Cannot delete laptop '{$laptop->device_name}' because it is currently checked out or has pending requests. " .
+                    "Please check in the laptop and resolve all pending requests before deleting."
+                );
+            }
+
+            // Check if laptop has any completed borrowings
+            $completedBorrowingsCount = $laptop->borrowings()->where('status', 'returned')->count();
+            
+            if ($completedBorrowingsCount > 0) {
+                // Delete all completed borrowing records first
+                $laptop->borrowings()->where('status', 'returned')->delete();
             }
 
             // Delete the image file if it exists
@@ -103,8 +113,8 @@ class LaptopController extends Controller
             $laptop->delete();
 
             $message = 'Laptop deleted successfully.';
-            if ($borrowingsCount > 0) {
-                $message .= " Also deleted {$borrowingsCount} associated borrowing record(s).";
+            if ($completedBorrowingsCount > 0) {
+                $message .= " Also deleted {$completedBorrowingsCount} completed borrowing record(s).";
             }
 
             return redirect()->route('admin.laptop')->with('success', $message);
