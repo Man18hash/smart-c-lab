@@ -504,7 +504,7 @@
       console.log('Button target:', button.getAttribute('data-bs-target'));
     });
     
-    // Add click event listeners to View More buttons
+    // Add click event listeners to View More buttons for debugging only
     buttons.forEach(button => {
       button.addEventListener('click', function(e) {
         const targetId = this.getAttribute('data-bs-target');
@@ -518,14 +518,8 @@
           return false;
         }
         
-        // Try to manually show the modal
-        try {
-          const bsModal = new bootstrap.Modal(modal);
-          bsModal.show();
-          console.log('Modal shown successfully');
-        } catch (error) {
-          console.error('Error showing modal:', error);
-        }
+        // Let Bootstrap handle the modal naturally - don't interfere
+        console.log('Modal found, letting Bootstrap handle it');
       });
     });
   });
@@ -596,6 +590,7 @@
     });
   });
 
+  // Handle modal events properly
   document.addEventListener('shown.bs.modal', function(e){
     const el = e.target.querySelector('[id^="modal-map-"][data-lat][data-lng]');
     if(!el) return;
@@ -604,6 +599,29 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     L.marker([lat,lng]).addTo(map);
     setTimeout(()=> map.invalidateSize(), 200);
+  });
+
+  // Ensure proper modal cleanup
+  document.addEventListener('hidden.bs.modal', function(e){
+    console.log('Modal hidden:', e.target.id);
+    // Remove any lingering modal classes
+    document.body.classList.remove('modal-open');
+    // Remove any backdrop elements that might be stuck
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+  });
+
+  // Handle modal close button clicks
+  document.addEventListener('click', function(e){
+    if (e.target.matches('[data-bs-dismiss="modal"]') || e.target.closest('[data-bs-dismiss="modal"]')) {
+      console.log('Modal close button clicked');
+      // Ensure proper cleanup
+      setTimeout(() => {
+        document.body.classList.remove('modal-open');
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+      }, 150);
+    }
   });
 })();
 </script>
