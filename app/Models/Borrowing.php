@@ -15,6 +15,7 @@ class Borrowing extends Model
         'ip_asset_id',
         'status',
         'purpose',
+        'duration_hours',
         'requested_at',
         'approved_at',
         'checked_out_at',

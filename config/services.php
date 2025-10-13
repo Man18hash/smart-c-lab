@@ -37,5 +37,8 @@ return [
     'google' => [
         'maps_key' => env('GOOGLE_MAPS_KEY', ''), // Maps JavaScript API / Places API key
     ],
+    'timer_api' => [
+    'key' => env('TIMER_API_KEY', 'smart-c-lab-123456789'),
+    ],
 
 ];
